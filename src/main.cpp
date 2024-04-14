@@ -90,7 +90,7 @@ void setupBLE()
 void SendSensorValue(BLECharacteristic *pCharacteristic, double value)
 {
   pCharacteristic->setValue(value);
-  // pCharacteristic->notify();
+  pCharacteristic->notify();
   digitalWrite(LED_PIN, HIGH);
   delay(100);
   digitalWrite(LED_PIN, LOW);
@@ -114,7 +114,9 @@ void loop()
     double value1 = random(0, 10000) / 100.0;
     double value2 = random(0, 10000) / 100.0;
     SendSensorValue(pCharacteristicTank1, value1);
+    delay(2000); // bluetooth stack will go into congestion, if too many packets are sent
     SendSensorValue(pCharacteristicTank2, value2);
+    delay(2000); // bluetooth stack will go into congestion, if too many packets are sent
   }
   else
   {
@@ -122,6 +124,6 @@ void loop()
     digitalWrite(LED_PIN, LOW);
     delay(100);
     digitalWrite(LED_PIN, HIGH);
+    delay(3000); // wait for 3 seconds
   }
-  delay(3000); // bluetooth stack will go into congestion, if too many packets are sent
 }
