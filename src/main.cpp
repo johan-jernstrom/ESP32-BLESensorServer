@@ -102,14 +102,6 @@ void setupBLE()
   Serial.println("BLE Setup Done. Started advertising " + String(BLE_DEVICE_NAME) + "...");
 }
 
-void setup()
-{
-  Serial.begin(115200);
-  pinMode(LED_PIN, OUTPUT);
-  setupDisplay();
-  setupBLE();
-}
-
 void setupDisplay()
 {
   display.init();
@@ -119,6 +111,15 @@ void setupDisplay()
   display.drawString(0, 0, "Initiating...");
   display.display();
 }
+
+void setup()
+{
+  Serial.begin(115200);
+  pinMode(LED_PIN, OUTPUT);
+  setupDisplay();
+  setupBLE();
+}
+
 
 void updateDisplay()
 {
