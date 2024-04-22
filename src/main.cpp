@@ -120,7 +120,6 @@ void setup()
   setupBLE();
 }
 
-
 void updateDisplay()
 {
   display.clear();
