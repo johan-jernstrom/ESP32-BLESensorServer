@@ -82,12 +82,11 @@ void setupBLE()
   // Create the BLE Service
   BLEService *pService = pServer->createService(BLE_SERVICE_UUID);
 
-
   // add the characteristics to the service
-  for (int i = 0; i < 4; i++)
-  {
-    pService->addCharacteristic(sensorCharacteristics[i]);
-  }
+  pService->addCharacteristic(sensorCharacteristics[0]);
+  pService->addCharacteristic(sensorCharacteristics[1]);
+  pService->addCharacteristic(sensorCharacteristics[2]);
+  pService->addCharacteristic(sensorCharacteristics[3]);
 
   // Start the service
   pService->start();
