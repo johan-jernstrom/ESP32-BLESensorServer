@@ -14,15 +14,15 @@
 #define BLE_SEPTIC_TANK_CHARACTERISTIC_UUID "9910102a-9d4e-41ce-be93-affba54425c4"
 #define BLE_TEMPERATURE_CHARACTERISTIC_UUID "c6db06e1-7f34-48ff-9f1e-f2904ac78525"
 #define BLE_HUMIDITY_CHARACTERISTIC_UUID "df2be7ec-fb73-40b6-b2cb-3c00d37f2229"
-#define DHTTYPE DHT22     // DHT 22  (AM2302), AM2321
-#define DHTPIN 47          // Digital pin connected to the DHT sensor
+#define DHTTYPE DHT22 // DHT 22  (AM2302), AM2321
+#define DHTPIN 47     // Digital pin connected to the DHT sensor
 
 SSD1306Wire display(0x3c, 500000, SDA_OLED, SCL_OLED, GEOMETRY_128_64, RST_OLED); // addr , freq , i2c group , resolution , rst
 DHT dht(DHTPIN, DHTTYPE);
 
 bool deviceConnected = false;
 uint8_t LED_PIN = 35;
-uint8_t MOSFET_PIN = 48; // Pin for the MOSFET controlling power to the 24V sensors
+uint8_t MOSFET_PIN = 48;           // Pin for the MOSFET controlling power to the 24V sensors
 uint8_t septicTankLevel1_PIN = 33; // Pin for the septic tank sensor at level 1
 uint8_t septicTankLevel2_PIN = 34; // Pin for the septic tank sensor at level 2
 
@@ -62,7 +62,7 @@ class BleSensorServerCallbacks : public BLEServerCallbacks
   }
 };
 
-BLECharacteristic* createCharacteristic(const char *uuid)
+BLECharacteristic *createCharacteristic(const char *uuid)
 {
   BLECharacteristic *pCharacteristic = pService->createCharacteristic(uuid, BLECharacteristic::PROPERTY_READ | BLECharacteristic::PROPERTY_NOTIFY);
   BLE2902 *pBLE2902 = new BLE2902();
@@ -83,7 +83,7 @@ void setupBLE()
   pService = pServer->createService(BLE_SERVICE_UUID);
 
   // Create the BLE Characteristics
-  pCharacteristicWaterTank = createCharacteristic(BLE_WATER_TANK_CHARACTERISTIC_UUID);
+  // pCharacteristicWaterTank = createCharacteristic(BLE_WATER_TANK_CHARACTERISTIC_UUID);
   pCharacteristicSepticTank = createCharacteristic(BLE_SEPTIC_TANK_CHARACTERISTIC_UUID);
   pCharacteristicTemperature = createCharacteristic(BLE_TEMPERATURE_CHARACTERISTIC_UUID);
   pCharacteristicHumidity = createCharacteristic(BLE_HUMIDITY_CHARACTERISTIC_UUID);
@@ -119,21 +119,22 @@ void setup()
   pinMode(MOSFET_PIN, OUTPUT);
   pinMode(septicTankLevel1_PIN, INPUT);
   pinMode(septicTankLevel2_PIN, INPUT);
+
+  digitalWrite(MOSFET_PIN, HIGH); // Turn on power to the sensors
+
   setupDisplay();
   setupBLE();
 
-   digitalWrite(MOSFET_PIN, HIGH); // Turn on power to the sensors
-
+  digitalWrite(MOSFET_PIN, HIGH); // Turn on power to the sensors
 }
 
 void updateDisplay()
 {
   display.clear();
-  display.drawString(0, 16, "Septik: " + String(septicTankLevel, 0) + " %");
+  display.drawString(0, 0, "Septik: " + String(septicTankLevel, 0) + " %");
   // display.drawString(0, 0, "Vatten: " + String(waterTankLevel, 0) + " %");
-  display.drawString(0, 0, "Vatten: -");
-  display.drawString(0, 32, "Temp: " + String(temperature, 0) + " C");
-  display.drawString(0, 48, "Humidity: " + String(humidity, 0) + " %");
+  display.drawString(0, 16, "Temp: " + String(temperature, 0) + " C");
+  display.drawString(0, 32, "Humidity: " + String(humidity, 0) + " %");
   if (deviceConnected)
   {
     display.drawXbm(128 - BT_width, 0, BT_width, BT_height, (const unsigned char *)BT_bits);
@@ -143,6 +144,8 @@ void updateDisplay()
 
 void readDhtSensor()
 {
+  Serial.println("Reading DHT sensor...");
+
   dht.begin();
 
   // Reading temperature or humidity takes about 250 milliseconds!
@@ -176,11 +179,11 @@ void readDhtSensor()
 void readSepticTankSensors()
 {
   Serial.println("Reading septic tank sensors...");
-  if (digitalRead(septicTankLevel2_PIN) == HIGH)
+  if (digitalRead(septicTankLevel2_PIN) == LOW)
   {
     septicTankLevel = 90.0;
   }
-  else if (digitalRead(septicTankLevel1_PIN) == HIGH)
+  else if (digitalRead(septicTankLevel1_PIN) == LOW)
   {
     septicTankLevel = 50.0;
   }
@@ -196,18 +199,16 @@ void readSensors()
   // Serial.println("Powering on sensors...");
   // digitalWrite(MOSFET_PIN, HIGH); // Turn on power to the sensors
 
-  // delay(2000); // Wait for the temp sensor to stabilize
-  Serial.println("Reading DHT sensor...");
+  // delay(1000); // Wait for the temp sensor to stabilize
   readDhtSensor();
 
   // delay(2000); // Wait for the septic tank sensor to stabilize
-  // Read the septic tank sensor
   readSepticTankSensors();
 
   // Read the water tank sensor
   // waterTankLevel = analogRead(waterTankLevel_PIN) / 4095.0 * 100.0;
-  waterTankLevel = random(0, 10000) / 100.0;
-  Serial.println("Water tank level: " + String(waterTankLevel) + " %");
+  // waterTankLevel = random(0, 10000) / 100.0;
+  // Serial.println("Water tank level: " + String(waterTankLevel) + " %");
 
   // digitalWrite(MOSFET_PIN, LOW); // Turn off power to the 24V sensors
   // Serial.println("Powering off sensors...");
@@ -217,16 +218,16 @@ void sendValue(BLECharacteristic *pCharacteristic, double value)
 {
   pCharacteristic->setValue(value);
   pCharacteristic->notify();
-  // digitalWrite(LED_PIN, HIGH);
-  // delay(50);
-  // digitalWrite(LED_PIN, LOW);
+  digitalWrite(LED_PIN, HIGH);
+  delay(50);
+  digitalWrite(LED_PIN, LOW);
   Serial.println("Sent value: " + String(value) + " to client for characteristic: " + pCharacteristic->getUUID().toString().c_str());
   delay(500); // bluetooth stack will go into congestion, if too many packets are sent so we need to slow down a bit
 }
 
 void sendAllValues()
 {
-  sendValue(pCharacteristicWaterTank, waterTankLevel);
+  // sendValue(pCharacteristicWaterTank, waterTankLevel);
   sendValue(pCharacteristicSepticTank, septicTankLevel);
   sendValue(pCharacteristicTemperature, temperature);
   sendValue(pCharacteristicHumidity, humidity);
@@ -235,7 +236,6 @@ void sendAllValues()
 // put your main code here, to run repeatedly:
 void loop()
 {
-
   readSensors();
 
   updateDisplay();
@@ -249,13 +249,6 @@ void loop()
     Serial.println("Skipping sending values to client as no client is connected...");
   }
 
-  //Serial.println("Going to sleep in 5 seconds...");
-  //delay(5000); // stay awake for 5 seconds to display the values on screen
-  // // put esp32 to sleep 
-  // esp_sleep_enable_timer_wakeup(3 * 1000000); // 3 seconds
-  // // esp_sleep_enable_timer_wakeup(5 * 60 * 1000000); // 5 minutes
-  // Serial.println("Going to sleep now");
-  // esp_deep_sleep_start();
-
-  delay(2000);
+  // delay 60 seconds
+  delay(5 * 1000);
 }
